@@ -58,6 +58,64 @@ class ChatMessage {
 
 enum OrderStatus { diproses, selesai }
 
+enum QuotationStatus { ditawarkan, diterima, ditolak }
+
+enum ProjectStatus { dikerjakan, review, revisi, selesai }
+
+class ServiceQuotation {
+  final String id;
+  final ServiceOffer offer;
+  final String businessNeed;
+  final int proposedPrice;
+  final int requestedBudget;
+  final String proposedDuration;
+  final int revisions;
+  final DateTime createdAt;
+  QuotationStatus status;
+
+  ServiceQuotation({
+    required this.id,
+    required this.offer,
+    required this.businessNeed,
+    required this.proposedPrice,
+    required this.requestedBudget,
+    required this.proposedDuration,
+    required this.revisions,
+    required this.createdAt,
+    this.status = QuotationStatus.ditawarkan,
+  });
+}
+
+class ProjectMilestone {
+  final String title;
+  final String description;
+  bool isComplete;
+  DateTime? completedAt;
+
+  ProjectMilestone({
+    required this.title,
+    required this.description,
+    this.isComplete = false,
+    this.completedAt,
+  });
+}
+
+class TrackedProject {
+  final String id;
+  final ServiceQuotation quotation;
+  final DateTime startedAt;
+  final List<ProjectMilestone> milestones;
+  ProjectStatus status;
+
+  TrackedProject({
+    required this.id,
+    required this.quotation,
+    required this.startedAt,
+    required this.milestones,
+    this.status = ProjectStatus.dikerjakan,
+  });
+}
+
 class Order {
   final String id;
   final ServiceOffer offer;
@@ -248,6 +306,11 @@ class MarketplaceStore extends ChangeNotifier {
 
   final Map<String, List<ChatMessage>> _messages = {};
   final List<Order> _orders = [];
+  final List<ServiceQuotation> _quotations = [];
+  final List<TrackedProject> _projects = [];
+  final Set<String> _favoriteOfferIds = {};
+  int _quotationSequence = 0;
+  int _projectSequence = 0;
 
   static const List<String> _autoReplies = [
     'Baik, terima kasih sudah menghubungi kami. Boleh ceritakan kebutuhan usahanya?',
@@ -266,6 +329,100 @@ class MarketplaceStore extends ChangeNotifier {
   List<ServiceOffer> offersByCategory(String category) => category == 'Semua'
       ? offers
       : offers.where((o) => o.category == category).toList();
+
+  bool isFavorite(String offerId) => _favoriteOfferIds.contains(offerId);
+
+  void toggleFavorite(String offerId) {
+    if (!_favoriteOfferIds.add(offerId)) _favoriteOfferIds.remove(offerId);
+    notifyListeners();
+  }
+
+  List<ServiceQuotation> get quotations => List.unmodifiable(
+      _quotations.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt)));
+
+  List<TrackedProject> get projects => List.unmodifiable(
+      _projects.toList()..sort((a, b) => b.startedAt.compareTo(a.startedAt)));
+
+  ServiceQuotation createQuotation({
+    required ServiceOffer offer,
+    required String businessNeed,
+    required int budget,
+  }) {
+    _quotationSequence++;
+    // Proposal mock: nilai penawaran mengikuti harga katalog, dengan estimasi
+    // waktu dan revisi yang dapat dilihat pengguna sebelum menyetujui.
+    final quotation = ServiceQuotation(
+      id: 'QTN-${_quotationSequence.toString().padLeft(4, '0')}',
+      offer: offer,
+      businessNeed: businessNeed.trim(),
+      proposedPrice: offer.price,
+      requestedBudget: budget,
+      proposedDuration: offer.duration,
+      revisions: 2,
+      createdAt: DateTime.now(),
+    );
+    _quotations.add(quotation);
+    notifyListeners();
+    return quotation;
+  }
+
+  TrackedProject? acceptQuotation(ServiceQuotation quotation) {
+    if (quotation.status != QuotationStatus.ditawarkan) return null;
+    quotation.status = QuotationStatus.diterima;
+    _projectSequence++;
+    final project = TrackedProject(
+      id: 'PRJ-${_projectSequence.toString().padLeft(4, '0')}',
+      quotation: quotation,
+      startedAt: DateTime.now(),
+      milestones: [
+        ProjectMilestone(title: 'Brief dikonfirmasi', description: 'Kebutuhan dan ruang lingkup pekerjaan disepakati.', isComplete: true, completedAt: DateTime.now()),
+        ProjectMilestone(title: 'Pengerjaan', description: 'Penyedia mulai mengerjakan layanan.'),
+        ProjectMilestone(title: 'Review hasil', description: 'Periksa hasil dan ajukan revisi bila diperlukan.'),
+        ProjectMilestone(title: 'Proyek selesai', description: 'Hasil akhir disetujui dan proyek ditutup.'),
+      ],
+    );
+    _projects.add(project);
+    notifyListeners();
+    return project;
+  }
+
+  void rejectQuotation(ServiceQuotation quotation) {
+    if (quotation.status != QuotationStatus.ditawarkan) return;
+    quotation.status = QuotationStatus.ditolak;
+    notifyListeners();
+  }
+
+  void advanceProject(TrackedProject project) {
+    if (project.status == ProjectStatus.selesai) return;
+    if (project.status == ProjectStatus.revisi) {
+      project.status = ProjectStatus.dikerjakan;
+    } else if (project.status == ProjectStatus.dikerjakan) {
+      project.status = ProjectStatus.review;
+      if (project.milestones.length > 1) {
+        project.milestones[1].isComplete = true;
+        project.milestones[1].completedAt = DateTime.now();
+        project.milestones[2].isComplete = true;
+        project.milestones[2].completedAt = DateTime.now();
+      }
+    } else if (project.status == ProjectStatus.review) {
+      project.status = ProjectStatus.selesai;
+      for (final milestone in project.milestones) {
+        milestone.isComplete = true;
+        milestone.completedAt ??= DateTime.now();
+      }
+    }
+    notifyListeners();
+  }
+
+  void requestRevision(TrackedProject project) {
+    if (project.status != ProjectStatus.review) return;
+    project.status = ProjectStatus.revisi;
+    if (project.milestones.length > 2) {
+      project.milestones[2].isComplete = false;
+      project.milestones[2].completedAt = null;
+    }
+    notifyListeners();
+  }
 
   // ---------- Chat ----------
 

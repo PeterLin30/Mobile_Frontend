@@ -10,6 +10,7 @@ import 'help_center_page.dart';
 import 'service_pages.dart';
 import 'chat_page.dart';
 import 'order_history_page.dart';
+import 'project_flow_pages.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -146,6 +147,22 @@ class _ProfilePageState extends State<ProfilePage> {
                 title: 'Riwayat Pesanan & Penyedia',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const OrderHistoryPage()),
+                ),
+              ),
+              MenuItem(
+                icon: Icons.request_quote_outlined,
+                title: 'Penawaran Saya',
+                subtitle: 'Lihat dan kelola proposal layanan',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const QuotationListPage()),
+                ),
+              ),
+              MenuItem(
+                icon: Icons.timeline,
+                title: 'Pelacakan Proyek',
+                subtitle: 'Pantau progres proyek berjalan',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProjectTrackingListPage()),
                 ),
               ),
             ],

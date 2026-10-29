@@ -11,6 +11,7 @@ import 'service_pages.dart';
 import 'chat_room_page.dart';
 import 'activity_page.dart';
 import 'ui_helpers.dart';
+import 'quick_action_sheet.dart';
 
 const Color primaryColor = Color(0xFF5CC8CC);
 const Color lightCyan = Color(0xFFC8F1F3);
@@ -94,14 +95,6 @@ class _HomePageState extends State<HomePage> {
       Icons.lightbulb_outline_rounded,
     ),
   ];
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-      );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -257,6 +250,21 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+void _showQuickActions() {
+  QuickActionSheet.show(
+    context,
+    onFindDeveloper: () => _openServiceList(),
+    onBusinessHelp: () => _openServiceList(category: 'Bisnis'),
+    onConsult: () => setState(() => _selectedIndex = 1),
+    onVoucher: () => Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const VoucherPage(),
+      ),
+    ),
+  );
+}
 
   // LAYANAN POPULER: data dari MarketplaceStore (dummy).
   Widget _buildPopularOffers() {
@@ -675,7 +683,7 @@ class _HomePageState extends State<HomePage> {
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: () {
-                      _showMessage('Menu utama MikroHub');
+                      _showQuickActions();
                     },
                     child: Container(
                       width: 54,

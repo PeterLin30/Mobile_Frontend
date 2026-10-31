@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'responsive.dart';
 
 const Color primaryColor = Color(0xFF5CC8CC);
 const Color lightCyan = Color(0xFFC8F1F3);
@@ -340,7 +341,9 @@ class VoucherPage extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: ListView(
+      body: ResponsiveBody(
+        maxWidth: 720,
+        child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           Container(
@@ -411,6 +414,7 @@ class VoucherPage extends StatelessWidget {
           ),
           const SizedBox(height: 20),
         ],
+      ),
       ),
     );
   }

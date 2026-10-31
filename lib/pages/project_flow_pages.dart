@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'marketplace_data.dart';
 import 'ui_helpers.dart';
+import 'responsive.dart';
 
 class RequestQuotationPage extends StatefulWidget {
   final ServiceOffer offer;
@@ -29,7 +30,9 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
     final provider = _store.providerById(widget.offer.providerId);
     return Scaffold(
       appBar: AppBar(title: const Text('Minta Penawaran')),
-      body: Form(
+      body: ResponsiveBody(
+        maxWidth: 640,
+        child: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -93,6 +96,7 @@ class _RequestQuotationPageState extends State<RequestQuotationPage> {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -110,10 +114,9 @@ class QuotationListPage extends StatelessWidget {
         builder: (context, _) {
           final quotations = store.quotations;
           if (quotations.isEmpty) return const _EmptyState(icon: Icons.request_quote_outlined, title: 'Belum ada penawaran', message: 'Buka layanan yang kamu minati lalu pilih Minta Penawaran.');
-          return ListView.separated(
+          return ResponsiveCardList(
             padding: const EdgeInsets.all(16),
             itemCount: quotations.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final q = quotations[index];
               return InkWell(
@@ -147,7 +150,7 @@ class QuotationDetailPage extends StatelessWidget {
       appBar: AppBar(title: const Text('Detail Penawaran')),
       body: ListenableBuilder(
         listenable: store,
-        builder: (context, _) => ListView(padding: const EdgeInsets.all(16), children: [
+        builder: (context, _) => ResponsiveBody(maxWidth: 720, child: ListView(padding: const EdgeInsets.all(16), children: [
           Container(padding: const EdgeInsets.all(18), decoration: cardDecoration(), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [const Icon(Icons.request_quote, color: kPrimary, size: 28), const SizedBox(width: 10), Expanded(child: Text(quotation.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))), _StatusPill(label: _quotationStatus(quotation.status), color: _quotationColor(quotation.status))]),
             const SizedBox(height: 18),
@@ -184,7 +187,7 @@ class QuotationDetailPage extends StatelessWidget {
           ] else const _EmptyState(icon: Icons.block, title: 'Penawaran ditolak', message: 'Penawaran ini sudah ditolak.'),
           const SizedBox(height: 12),
           const Text('Simulasi frontend: persetujuan ini tidak membuat transaksi atau pembayaran nyata.', textAlign: TextAlign.center, style: TextStyle(color: kTextGrey, fontSize: 11)),
-        ]),
+        ])),
       ),
     );
   }
@@ -206,7 +209,7 @@ class ProjectTrackingListPage extends StatelessWidget {
       body: ListenableBuilder(listenable: store, builder: (context, _) {
         final projects = store.projects;
         if (projects.isEmpty) return const _EmptyState(icon: Icons.timeline, title: 'Belum ada proyek', message: 'Terima penawaran untuk memulai proyek pertamamu.');
-        return ListView.separated(padding: const EdgeInsets.all(16), itemCount: projects.length, separatorBuilder: (_, __) => const SizedBox(height: 12), itemBuilder: (context, index) {
+        return ResponsiveCardList(padding: const EdgeInsets.all(16), itemCount: projects.length, itemBuilder: (context, index) {
           final project = projects[index];
           final complete = project.milestones.where((m) => m.isComplete).length;
           return InkWell(borderRadius: BorderRadius.circular(16), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProjectTrackingDetailPage(project: project))), child: Container(padding: const EdgeInsets.all(14), decoration: cardDecoration(), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -236,7 +239,7 @@ class ProjectTrackingDetailPage extends StatelessWidget {
       appBar: AppBar(title: const Text('Progres Proyek')),
       body: ListenableBuilder(listenable: store, builder: (context, _) {
         final completed = project.milestones.where((m) => m.isComplete).length;
-        return ListView(padding: const EdgeInsets.all(16), children: [
+        return ResponsiveBody(maxWidth: 720, child: ListView(padding: const EdgeInsets.all(16), children: [
           Container(padding: const EdgeInsets.all(18), decoration: cardDecoration(), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [Expanded(child: Text(project.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))), _StatusPill(label: _projectStatus(project.status), color: _projectColor(project.status))]),
             const SizedBox(height: 10),
@@ -269,7 +272,7 @@ class ProjectTrackingDetailPage extends StatelessWidget {
           ] else Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: Colors.green.withOpacity(.1), borderRadius: BorderRadius.circular(12)), child: const Row(children: [Icon(Icons.check_circle, color: Colors.green), SizedBox(width: 10), Expanded(child: Text('Proyek selesai. Terima kasih telah menggunakan MikroHub!', style: TextStyle(fontWeight: FontWeight.w600)))])),
           const SizedBox(height: 12),
           const Text('Catatan: tombol progres hanya untuk demonstrasi frontend; status tidak dikirim ke penyedia sungguhan.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: kTextGrey)),
-        ]);
+        ]));
       }),
     );
   }

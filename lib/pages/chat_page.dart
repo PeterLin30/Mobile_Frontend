@@ -4,6 +4,7 @@ import 'chat_room_page.dart';
 import 'marketplace_data.dart';
 import 'service_pages.dart';
 import 'ui_helpers.dart';
+import 'responsive.dart';
 
 /// Tab "Pesan": daftar percakapan (riwayat pesan) dengan penyedia layanan.
 class ChatPage extends StatelessWidget {
@@ -37,7 +38,8 @@ class ChatPage extends StatelessWidget {
           final ids = store.conversationIds;
           if (ids.isEmpty) return const _EmptyChat();
 
-          return ListView.separated(
+          return ResponsiveBody(
+            child: ListView.separated(
             padding: const EdgeInsets.only(bottom: 110),
             itemCount: ids.length,
             separatorBuilder: (_, __) =>
@@ -75,6 +77,7 @@ class ChatPage extends StatelessWidget {
                 ),
               );
             },
+          ),
           );
         },
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'user_profile.dart';
 import 'ui_helpers.dart';
+import 'responsive.dart';
 
 const List<String> kBusinessCategories = [
   'Kuliner',
@@ -64,7 +65,9 @@ class _BusinessInfoPageState extends State<BusinessInfoPage> {
         title: const Text('Informasi Usaha'),
         actions: [TextButton(onPressed: _save, child: const Text('Simpan'))],
       ),
-      body: Form(
+body: ResponsiveBody(
+        maxWidth: 640,
+        child: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -117,6 +120,7 @@ class _BusinessInfoPageState extends State<BusinessInfoPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

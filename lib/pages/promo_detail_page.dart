@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'responsive.dart';
 
 const Color _primary = Color(0xFF5CC8CC);
 const Color _lightCyan = Color(0xFFC8F1F3);
@@ -80,12 +81,16 @@ class PromoDetailPage extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
+      body: ResponsiveBody(
+        maxWidth: 960,
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
+        // HP portrait: header di atas. Landscape/tablet: header di kiri.
+        child: AdaptiveSplit(
+          gap: 24,
+          primaryFlex: 2,
+          secondaryFlex: 3,
+          primary: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -122,7 +127,9 @@ class PromoDetailPage extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+          secondary: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             const Text(
               'Tentang Penawaran',
               style: TextStyle(
@@ -225,6 +232,8 @@ class PromoDetailPage extends StatelessWidget {
             ),
           ],
         ),
+        ),
+      ),
       ),
     );
   }

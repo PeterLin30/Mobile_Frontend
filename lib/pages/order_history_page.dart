@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'chat_room_page.dart';
 import 'marketplace_data.dart';
 import 'ui_helpers.dart';
+import 'responsive.dart';
 
 /// Riwayat pesanan + daftar penyedia yang pernah dipakai.
 class OrderHistoryPage extends StatelessWidget {
@@ -26,11 +27,14 @@ class OrderHistoryPage extends StatelessWidget {
         ),
         body: ListenableBuilder(
           listenable: store,
-          builder: (context, _) => TabBarView(
-            children: [
-              OrderListView(store: store),
-              _ProviderTab(store: store),
-            ],
+          builder: (context, _) => ResponsiveBody(
+            maxWidth: 960,
+            child: TabBarView(
+              children: [
+                OrderListView(store: store),
+                _ProviderTab(store: store),
+              ],
+            ),
           ),
         ),
       ),
@@ -63,10 +67,10 @@ class OrderListView extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
+    return ResponsiveCardList(
       padding: padding,
       itemCount: orders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      minTileWidth: 360,
       itemBuilder: (context, i) {
         final order = orders[i];
         final provider = store.providerById(order.offer.providerId);
@@ -157,10 +161,10 @@ class _ProviderTab extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
+    return ResponsiveCardList(
       padding: const EdgeInsets.all(16),
       itemCount: used.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      minTileWidth: 360,
       itemBuilder: (context, i) {
         final u = used[i];
         return Container(

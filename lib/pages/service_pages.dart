@@ -5,6 +5,7 @@ import 'marketplace_data.dart';
 import 'purchase_flow.dart';
 import 'ui_helpers.dart';
 import 'project_flow_pages.dart';
+import 'responsive.dart';
 
 /// Daftar layanan dari semua penyedia, dengan filter kategori.
 class ServiceListPage extends StatefulWidget {
@@ -80,10 +81,12 @@ class _ServiceListPageState extends State<ServiceListPage> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      constraints: const BoxConstraints(maxWidth: 560),
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) => Padding(
           padding: EdgeInsets.fromLTRB(20, 8, 20, 24 + MediaQuery.of(context).viewInsets.bottom),
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -118,6 +121,7 @@ class _ServiceListPageState extends State<ServiceListPage> {
               ]),
             ],
           ),
+          ),
         ),
       ),
     );
@@ -147,7 +151,9 @@ class _ServiceListPageState extends State<ServiceListPage> {
         listenable: _store,
         builder: (context, _) {
           final offers = _filteredOffers();
-          return Column(
+          return ResponsiveBody(
+            maxWidth: 1000,
+            child: Column(
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -211,10 +217,11 @@ class _ServiceListPageState extends State<ServiceListPage> {
               Expanded(
                 child: offers.isEmpty
                     ? Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.search_off, size: 48, color: kTextGrey), const SizedBox(height: 12), const Text('Layanan tidak ditemukan', style: TextStyle(fontWeight: FontWeight.w600)), const SizedBox(height: 4), const Text('Coba kata kunci atau filter yang berbeda.', textAlign: TextAlign.center, style: TextStyle(color: kTextGrey)), TextButton(onPressed: () => setState(() { _searchController.clear(); _category = 'Semua'; _minimumRating = 0; _maxPrice = 10000000; _favoritesOnly = false; _sort = 'Relevansi'; }), child: const Text('Reset pencarian'))])))
-                    : ListView.separated(
+                    : ResponsiveCardList(
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                         itemCount: offers.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        minTileWidth: 400,
+                        maxColumns: 2,
                         itemBuilder: (context, i) {
                           final offer = offers[i];
                           final provider = _store.providerById(offer.providerId);
@@ -245,6 +252,7 @@ class _ServiceListPageState extends State<ServiceListPage> {
                       ),
               ),
             ],
+          ),
           );
         },
       ),
@@ -270,12 +278,21 @@ class ServiceDetailPage extends StatelessWidget {
           final canBuy = store.hasChatted(provider.id);
           final ordered = store.hasOrdered(offer.id);
 
-          return Column(
+          return ResponsiveBody(
+            maxWidth: 900,
+            child: Column(
             children: [
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    AdaptiveSplit(
+                      gap: 24,
+                      primaryFlex: 3,
+                      secondaryFlex: 2,
+                      primary: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                     Text(
                       offer.title,
                       style: const TextStyle(
@@ -306,7 +323,11 @@ class ServiceDetailPage extends StatelessWidget {
                       offer.description,
                       style: const TextStyle(fontSize: 14, height: 1.5),
                     ),
-                    const SizedBox(height: 24),
+                        ],
+                      ),
+                      secondary: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                     const Text(
                       'Penyedia',
                       style: TextStyle(
@@ -355,6 +376,9 @@ class ServiceDetailPage extends StatelessWidget {
                               Text(provider.rating.toString()),
                             ],
                           ),
+                        ],
+                      ),
+                    ),
                         ],
                       ),
                     ),
@@ -429,6 +453,7 @@ class ServiceDetailPage extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           );
         },
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'ui_helpers.dart';
+import 'responsive.dart';
 
 class HelpCenterPage extends StatelessWidget {
   const HelpCenterPage({super.key});
@@ -28,7 +29,9 @@ class HelpCenterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Pusat Bantuan')),
-      body: ListView(
+body: ResponsiveBody(
+        maxWidth: 720,
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           for (final f in _faqs)
@@ -58,6 +61,7 @@ class HelpCenterPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -12,6 +12,7 @@ import 'chat_room_page.dart';
 import 'activity_page.dart';
 import 'ui_helpers.dart';
 import 'quick_action_sheet.dart';
+import 'responsive.dart';
 
 const Color primaryColor = Color(0xFF5CC8CC);
 const Color lightCyan = Color(0xFFC8F1F3);
@@ -49,6 +50,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+
+  // GlobalKey supaya state tiap tab tidak hilang saat layar diputar
+  // (bottom bar <-> side bar).
+  final GlobalKey _pagesKey = GlobalKey();
 
   final List<ServiceItem> _services = const [
     ServiceItem('Mobile', LucideIcons.smartphone),
@@ -98,26 +103,41 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Layar lebar (HP landscape / tablet): navigasi pindah ke samping.
+    final wide = context.isWide;
+
+    // IndexedStack keeps each page's state while switching tabs.
+    final pages = IndexedStack(
+      key: _pagesKey,
+      index: _selectedIndex,
+      children: [
+        _buildHomeContent(),
+        const ChatPage(),
+        const ActivityPage(),
+        const ProfilePage(),
+      ],
+    );
+
     return Scaffold(
-      // IndexedStack keeps each page's state while switching tabs.
       body: SafeArea(
         bottom: false,
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: [
-            _buildHomeContent(),
-            const ChatPage(),
-            const ActivityPage(),
-            const ProfilePage(),
-          ],
-        ),
+        child: wide
+            ? Row(
+                children: [
+                  _buildSideNavigation(),
+                  Expanded(child: pages),
+                ],
+              )
+            : pages,
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
+      bottomNavigationBar: wide ? null : _buildBottomNavigation(),
     );
   }
 
   Widget _buildHomeContent() {
-    return CustomScrollView(
+    return ResponsiveBody(
+      maxWidth: 960,
+      child: CustomScrollView(
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -225,18 +245,23 @@ class _HomePageState extends State<HomePage> {
 
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _buildNewsCard(_news[index]),
-              );
-            }, childCount: _news.length),
+          sliver: SliverToBoxAdapter(
+            child: ResponsiveCardList(
+              padding: EdgeInsets.zero,
+              spacing: 10,
+              minTileWidth: 320,
+              maxColumns: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _news.length,
+              itemBuilder: (context, index) => _buildNewsCard(_news[index]),
+            ),
           ),
         ),
 
         const SliverToBoxAdapter(child: SizedBox(height: 24)),
       ],
+      ),
     );
   }
 
@@ -409,7 +434,8 @@ void _showQuickActions() {
   }
 
   // SERVICES: komponen bawaan Flutter.
-
+  // Lebar item tetap 60; di layar lebar jarak antar item melebar otomatis
+  // sehingga baris ikon mengisi lebar yang tersedia.
   Widget _buildServices() {
     return Container(
       height: 120,
@@ -417,127 +443,146 @@ void _showQuickActions() {
         color: lightCyan,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        itemCount: _services.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 16),
-        itemBuilder: (context, index) {
-          final service = _services[index];
-          final bool isSeeAll = service.title == 'See All';
+      child: LayoutBuilder(
+        builder: (context, box) {
+          const itemWidth = 60.0;
+          final count = _services.length;
+          final free = box.maxWidth - 24 - count * itemWidth;
+          final spread = count > 1 ? free / (count - 1) : 16.0;
+          final gap = spread < 16 ? 16.0 : spread;
 
-          return SizedBox(
-            width: 60,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                if (isSeeAll) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AllServicesPage(
-                        services: _services
-                            .where((item) => item.title != 'See All')
-                            .toList(),
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            itemCount: count,
+            separatorBuilder: (context, index) => SizedBox(width: gap),
+            itemBuilder: (context, index) {
+              final service = _services[index];
+              final bool isSeeAll = service.title == 'See All';
+
+              return SizedBox(
+                width: itemWidth,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    if (isSeeAll) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AllServicesPage(
+                            services: _services
+                                .where((item) => item.title != 'See All')
+                                .toList(),
+                          ),
+                        ),
+                      );
+                    } else {
+                      _openServiceList(category: service.title);
+                    }
+                  },
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 25,
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF616D70),
+                        child: Icon(service.icon, size: 25),
                       ),
-                    ),
-                  );
-                } else {
-                  _openServiceList(category: service.title);
-                }
-              },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 25,
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF616D70),
-                    child: Icon(service.icon, size: 25),
+                      const SizedBox(height: 7),
+                      Text(
+                        service.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, color: textColor),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 7),
-                  Text(
-                    service.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, color: textColor),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         },
       ),
     );
   }
 
-  // PROMO: kartu horizontal yang bisa digeser.
+  // PROMO: HP portrait = kartu horizontal yang bisa digeser,
+  // layar lebar = kartu dibagi rata (Expanded) memenuhi lebar.
+
+  Widget _buildPromoCard(PromoItem promo) {
+    return Material(
+      color: lightCyan,
+      borderRadius: BorderRadius.circular(6),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PromoDetailPage(
+                title: promo.title,
+                subtitle: promo.subtitle,
+                icon: promo.icon,
+              ),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(promo.icon, size: 27, color: const Color(0xFF397E82)),
+              const Spacer(),
+              Text(
+                promo.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                promo.subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildPromos() {
     return SizedBox(
       height: 120,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(right: 4),
-        itemCount: _promos.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final promo = _promos[index];
+      child: LayoutBuilder(
+        builder: (context, box) {
+          if (box.maxWidth >= 520) {
+            return Row(
+              children: [
+                for (int i = 0; i < _promos.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 10),
+                  Expanded(child: _buildPromoCard(_promos[i])),
+                ],
+              ],
+            );
+          }
 
-          return SizedBox(
-            width: 150,
-            child: Material(
-              color: lightCyan,
-              borderRadius: BorderRadius.circular(6),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PromoDetailPage(
-                        title: promo.title,
-                        subtitle: promo.subtitle,
-                        icon: promo.icon,
-                      ),
-                    ),
-                  );
-                },
-
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        promo.icon,
-                        size: 27,
-                        color: const Color(0xFF397E82),
-                      ),
-                      const Spacer(),
-                      Text(
-                        promo.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        promo.subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(right: 4),
+            itemCount: _promos.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, index) =>
+                SizedBox(width: 150, child: _buildPromoCard(_promos[index])),
           );
         },
       ),
@@ -708,6 +753,87 @@ void _showQuickActions() {
     );
   }
 
+  // SIDE NAVIGATION: dipakai di layar lebar (HP landscape / tablet).
+  Widget _buildSideNavigation() {
+    return Container(
+      width: 84,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          right: BorderSide(
+            color: primaryColor.withValues(alpha: 0.8),
+            width: 1.2,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        right: false,
+        // ListView supaya tetap bisa di-scroll di landscape yang pendek.
+        child: ListView(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          children: [
+            _buildRailItem(0, Icons.home_rounded, 'Home'),
+            _buildRailItem(1, Icons.chat_rounded, 'Pesan'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: Material(
+                  color: const Color(0xFF9CE3E7),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _showQuickActions,
+                    child: const SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Icon(
+                        Icons.grid_view_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            _buildRailItem(2, Icons.receipt_long_rounded, 'Aktivitas'),
+            _buildRailItem(3, Icons.person_rounded, 'Profil'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRailItem(int index, IconData icon, String label) {
+    final bool selected = _selectedIndex == index;
+
+    return InkWell(
+      onTap: () => setState(() => _selectedIndex = index),
+      child: SizedBox(
+        height: 64,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 25,
+              color: selected ? primaryColor : const Color(0xFFD2D4D5),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: selected ? primaryColor : const Color(0xFF9EA1A3),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildNavItem(int index, IconData icon, String label) {
     final bool selected = _selectedIndex == index;
 
@@ -803,12 +929,16 @@ class HomeNewsDetailPage extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
+      body: ResponsiveBody(
+        maxWidth: 960,
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
+        // HP portrait: gambar di atas. Landscape/tablet: gambar di kiri.
+        child: AdaptiveSplit(
+          gap: 20,
+          primaryFlex: 2,
+          secondaryFlex: 3,
+          primary: Container(
               width: double.infinity,
               height: 180,
               decoration: BoxDecoration(
@@ -817,7 +947,9 @@ class HomeNewsDetailPage extends StatelessWidget {
               ),
               child: Icon(news.icon, size: 80, color: const Color(0xFF397E82)),
             ),
-            const SizedBox(height: 20),
+          secondary: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
               news.date,
               style: const TextStyle(color: Colors.grey, fontSize: 12),
@@ -860,6 +992,8 @@ class HomeNewsDetailPage extends StatelessWidget {
             ),
           ],
         ),
+        ),
+      ),
       ),
     );
   }
@@ -879,11 +1013,14 @@ class AllServicesPage extends StatelessWidget {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: GridView.builder(
+      body: ResponsiveBody(
+        maxWidth: 960,
+        child: GridView.builder(
         padding: const EdgeInsets.all(20),
         itemCount: services.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
+        // jumlah kolom otomatis: 3 di HP portrait, lebih banyak di layar lebar
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 140,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 0.85,
@@ -931,6 +1068,7 @@ class AllServicesPage extends StatelessWidget {
             ),
           );
         },
+      ),
       ),
     );
   }

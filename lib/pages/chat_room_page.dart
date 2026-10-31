@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'marketplace_data.dart';
 import 'purchase_flow.dart';
 import 'ui_helpers.dart';
+import 'responsive.dart';
 
 class ChatRoomPage extends StatefulWidget {
   final String providerId;
@@ -92,7 +93,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         listenable: _store,
         builder: (context, _) {
           final messages = _store.messagesWith(widget.providerId);
-          return Column(
+          return ResponsiveBody(
+            maxWidth: 800,
+            child: Column(
             children: [
               if (widget.offer != null) _buildOfferBar(widget.offer!),
               Expanded(
@@ -112,6 +115,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               ),
               _buildInput(),
             ],
+          ),
           );
         },
       ),
@@ -220,7 +224,11 @@ class _Bubble extends StatelessWidget {
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          // 75% lebar layar, tapi tidak lebih dari 75% area chat (maks 800)
+          maxWidth: (MediaQuery.sizeOf(context).width > 800
+                  ? 800
+                  : MediaQuery.sizeOf(context).width) *
+              0.75,
         ),
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

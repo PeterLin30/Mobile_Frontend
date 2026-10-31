@@ -11,6 +11,7 @@ import 'service_pages.dart';
 import 'chat_page.dart';
 import 'order_history_page.dart';
 import 'project_flow_pages.dart';
+import 'responsive.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -101,12 +102,20 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profil'), centerTitle: false),
-      body: ListView(
+      body: ResponsiveBody(
+        maxWidth: 960,
+        child: ListView(
         // padding bawah besar supaya tidak tertutup tombol tengah & navbar
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
         children: [
           ProfileHeader(user: _user, onTap: _openEditProfile),
           const SizedBox(height: 24),
+          // HP portrait: menu bertumpuk. Landscape/tablet: dua kolom.
+          AdaptiveSplit(
+            gap: 16,
+            primary: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
           MenuSection(
             title: 'Akun',
             items: [
@@ -167,7 +176,11 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+              ],
+            ),
+            secondary: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
           MenuSection(
             title: 'Pengaturan',
             items: [
@@ -219,7 +232,11 @@ class _ProfilePageState extends State<ProfilePage> {
               style: TextStyle(fontSize: 12, color: kTextGrey),
             ),
           ),
+              ],
+            ),
+          ),
         ],
+      ),
       ),
     );
   }

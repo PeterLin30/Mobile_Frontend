@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'responsive.dart';
 
 const Color _primary = Color(0xFF5CC8CC);
 const Color _lightCyan = Color(0xFFC8F1F3);
@@ -78,8 +79,13 @@ class NewsPage extends StatelessWidget {
         backgroundColor: _primary,
         foregroundColor: Colors.white,
       ),
-      body: ListView.builder(
+      body: ResponsiveBody(
+        maxWidth: 1000,
+        child: ResponsiveCardList(
         padding: const EdgeInsets.all(16),
+        spacing: 14,
+        minTileWidth: 380,
+        maxColumns: 2,
         itemCount: _news.length,
         itemBuilder: (context, index) {
           final news = _news[index];
@@ -87,7 +93,7 @@ class NewsPage extends StatelessWidget {
           return Card(
             color: Colors.white,
             elevation: 1,
-            margin: const EdgeInsets.only(bottom: 14),
+            margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -179,6 +185,7 @@ class NewsPage extends StatelessWidget {
           );
         },
       ),
+      ),
     );
   }
 
@@ -214,12 +221,16 @@ class NewsDetailPage extends StatelessWidget {
         backgroundColor: _primary,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
+      body: ResponsiveBody(
+        maxWidth: 960,
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
+        // HP portrait: gambar di atas. Landscape/tablet: gambar di kiri.
+        child: AdaptiveSplit(
+          gap: 20,
+          primaryFlex: 2,
+          secondaryFlex: 3,
+          primary: Container(
               width: double.infinity,
               height: 180,
               decoration: BoxDecoration(
@@ -232,7 +243,9 @@ class NewsDetailPage extends StatelessWidget {
                 color: _darkTeal,
               ),
             ),
-            const SizedBox(height: 20),
+          secondary: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
@@ -285,6 +298,8 @@ class NewsDetailPage extends StatelessWidget {
             ),
           ],
         ),
+        ),
+      ),
       ),
     );
   }

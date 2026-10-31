@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'marketplace_data.dart';
 import 'order_history_page.dart';
 import 'ui_helpers.dart';
+import 'responsive.dart';
 
 /// Tab "Aktivitas": riwayat pembelian layanan oleh pengguna.
 class ActivityPage extends StatelessWidget {
@@ -29,7 +30,9 @@ class ActivityPage extends StatelessWidget {
           final active =
               orders.where((o) => o.status == OrderStatus.diproses).length;
 
-          return Column(
+          return ResponsiveBody(
+            maxWidth: 960,
+            child: Column(
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -51,6 +54,7 @@ class ActivityPage extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           );
         },
       ),

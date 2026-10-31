@@ -24,6 +24,9 @@ class QuickActionSheet {
     return showModalBottomSheet(
       context: context,
       showDragHandle: true,
+      // landscape: sheet bisa di-scroll & dibatasi lebarnya
+      isScrollControlled: true,
+      constraints: const BoxConstraints(maxWidth: 560),
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -47,7 +50,8 @@ class QuickActionSheet {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
+            child: SingleChildScrollView(
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -159,6 +163,7 @@ class QuickActionSheet {
                   ],
                 ),
               ],
+            ),
             ),
           ),
         );

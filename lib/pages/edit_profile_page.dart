@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'user_profile.dart';
 import 'ui_helpers.dart';
 import 'profile_avatar.dart';
+import 'responsive.dart';
 
 class EditProfilePage extends StatefulWidget {
   final UserProfile user;
@@ -63,7 +64,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
         title: const Text('Edit Profil'),
         actions: [TextButton(onPressed: _save, child: const Text('Simpan'))],
       ),
-      body: Form(
+body: ResponsiveBody(
+        maxWidth: 640,
+        child: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -164,6 +167,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

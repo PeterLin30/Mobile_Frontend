@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'responsive.dart';
 
 const Color _primary = Color(0xFF5CC8CC);
 const Color _textDark = Color(0xFF202124);
@@ -88,7 +89,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Buat Permintaan')),
-      body: Form(
+body: ResponsiveBody(
+        maxWidth: 640,
+        child: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -163,6 +166,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

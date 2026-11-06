@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 import 'create_request_page.dart';
@@ -9,10 +10,11 @@ class _QuickAction {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+
   const _QuickAction(this.icon, this.label, this.onTap);
 }
 
-/// Bottom sheet "Aksi Cepat" untuk tombol tengah navbar.
+/// Bottom sheet "Aksi Cepat".
 class QuickActionSheet {
   static Future<void> show(
     BuildContext context, {
@@ -23,35 +25,48 @@ class QuickActionSheet {
   }) {
     return showModalBottomSheet(
       context: context,
-      showDragHandle: true,
-      // landscape: sheet bisa di-scroll & dibatasi lebarnya
       isScrollControlled: true,
-      constraints: const BoxConstraints(maxWidth: 560),
+      showDragHandle: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(24),
+        ),
       ),
       builder: (sheetContext) {
         final actions = <_QuickAction>[
-          _QuickAction(Icons.search, 'Cari\nDeveloper', onFindDeveloper),
           _QuickAction(
-              Icons.account_balance_outlined, 'Bantuan\nBisnis', onBusinessHelp),
-          _QuickAction(Icons.forum_outlined, 'Konsultasi', onConsult),
+            Icons.search,
+            'Cari\nDeveloper',
+            onFindDeveloper,
+          ),
           _QuickAction(
-              Icons.confirmation_number_outlined, 'Voucher', onVoucher),
+            Icons.account_balance_outlined,
+            'Bantuan\nBisnis',
+            onBusinessHelp,
+          ),
+          _QuickAction(
+            Icons.forum_outlined,
+            'Konsultasi',
+            onConsult,
+          ),
+          _QuickAction(
+            Icons.confirmation_number_outlined,
+            'Voucher',
+            onVoucher,
+          ),
         ];
 
-        // Tutup sheet dulu, baru jalankan aksinya.
+        // Tutup sheet terlebih dahulu, lalu jalankan aksi.
         void run(VoidCallback action) {
           Navigator.pop(sheetContext);
           action();
         }
 
         return SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: SingleChildScrollView(
-              child: Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -63,6 +78,7 @@ class QuickActionSheet {
                     color: _textDark,
                   ),
                 ),
+
                 const SizedBox(height: 16),
 
                 // ---- Aksi utama ----
@@ -79,7 +95,10 @@ class QuickActionSheet {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF5CC8CC), Color(0xFF8EDDE0)],
+                        colors: [
+                          Color(0xFF5CC8CC),
+                          Color(0xFF8EDDE0),
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -93,9 +112,14 @@ class QuickActionSheet {
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.add, color: _primary),
+                          child: const Icon(
+                            Icons.add,
+                            color: _primary,
+                          ),
                         ),
+
                         const SizedBox(width: 14),
+
                         const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,16 +136,23 @@ class QuickActionSheet {
                               Text(
                                 'Ceritakan kebutuhanmu, developer akan mengirim penawaran',
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.white),
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: Colors.white),
+
+                        const Icon(
+                          Icons.chevron_right,
+                          color: Colors.white,
+                        ),
                       ],
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
                 // ---- Aksi lainnya ----
@@ -135,7 +166,9 @@ class QuickActionSheet {
                         child: SizedBox(
                           width: 72,
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 6,
+                            ),
                             child: Column(
                               children: [
                                 Container(
@@ -144,9 +177,14 @@ class QuickActionSheet {
                                     color: _primary.withOpacity(0.12),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(a.icon, color: _primary),
+                                  child: Icon(
+                                    a.icon,
+                                    color: _primary,
+                                  ),
                                 ),
+
                                 const SizedBox(height: 8),
+
                                 Text(
                                   a.label,
                                   textAlign: TextAlign.center,
@@ -163,7 +201,6 @@ class QuickActionSheet {
                   ],
                 ),
               ],
-            ),
             ),
           ),
         );

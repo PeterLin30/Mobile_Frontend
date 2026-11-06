@@ -12,7 +12,6 @@ import 'chat_room_page.dart';
 import 'activity_page.dart';
 import 'ui_helpers.dart';
 import 'quick_action_sheet.dart';
-import 'responsive.dart';
 
 const Color primaryColor = Color(0xFF5CC8CC);
 const Color lightCyan = Color(0xFFC8F1F3);
@@ -50,10 +49,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-
-  // GlobalKey supaya state tiap tab tidak hilang saat layar diputar
-  // (bottom bar <-> side bar).
-  final GlobalKey _pagesKey = GlobalKey();
 
   final List<ServiceItem> _services = const [
     ServiceItem('Mobile', LucideIcons.smartphone),
@@ -103,41 +98,222 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Layar lebar (HP landscape / tablet): navigasi pindah ke samping.
-    final wide = context.isWide;
-
-    // IndexedStack keeps each page's state while switching tabs.
-    final pages = IndexedStack(
-      key: _pagesKey,
-      index: _selectedIndex,
-      children: [
-        _buildHomeContent(),
-        const ChatPage(),
-        const ActivityPage(),
-        const ProfilePage(),
-      ],
-    );
+    // Sidebar digunakan saat landscape, navbar bawah saat portrait.
+    final bool isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
       body: SafeArea(
-        bottom: false,
-        child: wide
+        bottom: isLandscape,
+        child: isLandscape
             ? Row(
                 children: [
-                  _buildSideNavigation(),
-                  Expanded(child: pages),
+                  _buildSidebar(),
+                  Expanded(
+                    child: IndexedStack(
+                      index: _selectedIndex,
+                      children: [
+                        _buildHomeContent(),
+                        const ChatPage(),
+                        const ActivityPage(),
+                        const ProfilePage(),
+                      ],
+                    ),
+                  ),
                 ],
               )
-            : pages,
+            : IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  _buildHomeContent(),
+                  const ChatPage(),
+                  const ActivityPage(),
+                  const ProfilePage(),
+                ],
+              ),
       ),
-      bottomNavigationBar: wide ? null : _buildBottomNavigation(),
+      bottomNavigationBar:
+          isLandscape ? null : _buildBottomNavigation(),
+    );
+  }
+
+  // SIDEBAR NAVIGATION (LANDSCAPE)
+  // LayoutBuilder + Expanded menjaga sidebar tetap muat pada layar pendek.
+  Widget _buildSidebar() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool compact = constraints.maxHeight < 500;
+
+        return Container(
+          width: 190,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              right: BorderSide(
+                color: primaryColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: compact ? 12 : 24,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.hub_rounded,
+                      color: primaryColor,
+                      size: 30,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'MikroHub',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+
+              // Expanded memberi ruang fleksibel untuk daftar navigasi.
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.only(
+                    top: compact ? 8 : 20,
+                    bottom: 8,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildSidebarNavItem(
+                        0, Icons.home_rounded, 'Home',
+                      ),
+                      _buildSidebarNavItem(
+                        1, Icons.chat_rounded, 'Pesan',
+                      ),
+                      _buildSidebarNavItem(
+                        2, Icons.receipt_long_rounded, 'Aktivitas',
+                      ),
+                      _buildSidebarNavItem(
+                        3, Icons.person_rounded, 'Profil',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Quick Actions tetap berada di bawah dan lebih ringkas
+              // pada perangkat landscape dengan tinggi layar terbatas.
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  12,
+                  compact ? 4 : 8,
+                  12,
+                  compact ? 8 : 12,
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _showQuickActions,
+                    icon: const Icon(Icons.grid_view_rounded, size: 18),
+                    label: const Text(
+                      'Quick Actions',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF9CE3E7),
+                      foregroundColor: textColor,
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(
+                        vertical: compact ? 9 : 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSidebarNavItem(
+    int index,
+    IconData icon,
+    String label,
+  ) {
+    final bool selected = _selectedIndex == index;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 4,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 13,
+          ),
+          decoration: BoxDecoration(
+            color: selected ? lightCyan : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 22,
+                color: selected
+                    ? primaryColor
+                    : const Color(0xFF9EA1A3),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight:
+                      selected ? FontWeight.bold : FontWeight.normal,
+                  color: selected
+                      ? const Color(0xFF397E82)
+                      : const Color(0xFF777777),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _buildHomeContent() {
-    return ResponsiveBody(
-      maxWidth: 960,
-      child: CustomScrollView(
+    return CustomScrollView(
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -245,23 +421,18 @@ class _HomePageState extends State<HomePage> {
 
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          sliver: SliverToBoxAdapter(
-            child: ResponsiveCardList(
-              padding: EdgeInsets.zero,
-              spacing: 10,
-              minTileWidth: 320,
-              maxColumns: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _news.length,
-              itemBuilder: (context, index) => _buildNewsCard(_news[index]),
-            ),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _buildNewsCard(_news[index]),
+              );
+            }, childCount: _news.length),
           ),
         ),
 
         const SliverToBoxAdapter(child: SizedBox(height: 24)),
       ],
-      ),
     );
   }
 
@@ -276,20 +447,20 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-void _showQuickActions() {
-  QuickActionSheet.show(
-    context,
-    onFindDeveloper: () => _openServiceList(),
-    onBusinessHelp: () => _openServiceList(category: 'Bisnis'),
-    onConsult: () => setState(() => _selectedIndex = 1),
-    onVoucher: () => Navigator.push(
+  void _showQuickActions() {
+    QuickActionSheet.show(
       context,
-      MaterialPageRoute(
-        builder: (_) => const VoucherPage(),
+      onFindDeveloper: () => _openServiceList(),
+      onBusinessHelp: () => _openServiceList(category: 'Bisnis'),
+      onConsult: () => setState(() => _selectedIndex = 1),
+      onVoucher: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const VoucherPage(),
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   // LAYANAN POPULER: data dari MarketplaceStore (dummy).
   Widget _buildPopularOffers() {
@@ -434,8 +605,7 @@ void _showQuickActions() {
   }
 
   // SERVICES: komponen bawaan Flutter.
-  // Lebar item tetap 60; di layar lebar jarak antar item melebar otomatis
-  // sehingga baris ikon mengisi lebar yang tersedia.
+
   Widget _buildServices() {
     return Container(
       height: 120,
@@ -443,149 +613,77 @@ void _showQuickActions() {
         color: lightCyan,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: LayoutBuilder(
-        builder: (context, box) {
-          const itemWidth = 60.0;
-          final count = _services.length;
-          final free = box.maxWidth - 24 - count * itemWidth;
-          final spread = count > 1 ? free / (count - 1) : 16.0;
-          final gap = spread < 16 ? 16.0 : spread;
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        itemCount: _services.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 16),
+        itemBuilder: (context, index) {
+          final service = _services[index];
+          final bool isSeeAll = service.title == 'See All';
 
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            itemCount: count,
-            separatorBuilder: (context, index) => SizedBox(width: gap),
-            itemBuilder: (context, index) {
-              final service = _services[index];
-              final bool isSeeAll = service.title == 'See All';
-
-              return SizedBox(
-                width: itemWidth,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    if (isSeeAll) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AllServicesPage(
-                            services: _services
-                                .where((item) => item.title != 'See All')
-                                .toList(),
-                          ),
-                        ),
-                      );
-                    } else {
-                      _openServiceList(category: service.title);
-                    }
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF616D70),
-                        child: Icon(service.icon, size: 25),
+          return SizedBox(
+            width: 60,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                if (isSeeAll) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AllServicesPage(
+                        services: _services
+                            .where((item) => item.title != 'See All')
+                            .toList(),
                       ),
-                      const SizedBox(height: 7),
-                      Text(
-                        service.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, color: textColor),
-                      ),
-                    ],
+                    ),
+                  );
+                } else {
+                  _openServiceList(category: service.title);
+                }
+              },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 25,
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF616D70),
+                    child: Icon(service.icon, size: 25),
                   ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  // PROMO: HP portrait = kartu horizontal yang bisa digeser,
-  // layar lebar = kartu dibagi rata (Expanded) memenuhi lebar.
-
-  Widget _buildPromoCard(PromoItem promo) {
-    return Material(
-      color: lightCyan,
-      borderRadius: BorderRadius.circular(6),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PromoDetailPage(
-                title: promo.title,
-                subtitle: promo.subtitle,
-                icon: promo.icon,
+                  const SizedBox(height: 7),
+                  Text(
+                    service.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: textColor),
+                  ),
+                ],
               ),
             ),
           );
         },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(promo.icon, size: 27, color: const Color(0xFF397E82)),
-              const Spacer(),
-              Text(
-                promo.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                promo.subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
 
+  // PROMO: slider manual (swipe, tombol panah, dan indikator).
   Widget _buildPromos() {
-    return SizedBox(
-      height: 120,
-      child: LayoutBuilder(
-        builder: (context, box) {
-          if (box.maxWidth >= 520) {
-            return Row(
-              children: [
-                for (int i = 0; i < _promos.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 10),
-                  Expanded(child: _buildPromoCard(_promos[i])),
-                ],
-              ],
-            );
-          }
-
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(right: 4),
-            itemCount: _promos.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
-            itemBuilder: (context, index) =>
-                SizedBox(width: 150, child: _buildPromoCard(_promos[index])),
-          );
-        },
-      ),
+    return PromoCarousel(
+      promos: _promos,
+      onPromoTap: (promo) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PromoDetailPage(
+              title: promo.title,
+              subtitle: promo.subtitle,
+              icon: promo.icon,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -753,87 +851,6 @@ void _showQuickActions() {
     );
   }
 
-  // SIDE NAVIGATION: dipakai di layar lebar (HP landscape / tablet).
-  Widget _buildSideNavigation() {
-    return Container(
-      width: 84,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          right: BorderSide(
-            color: primaryColor.withValues(alpha: 0.8),
-            width: 1.2,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        right: false,
-        // ListView supaya tetap bisa di-scroll di landscape yang pendek.
-        child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          children: [
-            _buildRailItem(0, Icons.home_rounded, 'Home'),
-            _buildRailItem(1, Icons.chat_rounded, 'Pesan'),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Center(
-                child: Material(
-                  color: const Color(0xFF9CE3E7),
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: _showQuickActions,
-                    child: const SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: Icon(
-                        Icons.grid_view_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            _buildRailItem(2, Icons.receipt_long_rounded, 'Aktivitas'),
-            _buildRailItem(3, Icons.person_rounded, 'Profil'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRailItem(int index, IconData icon, String label) {
-    final bool selected = _selectedIndex == index;
-
-    return InkWell(
-      onTap: () => setState(() => _selectedIndex = index),
-      child: SizedBox(
-        height: 64,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 25,
-              color: selected ? primaryColor : const Color(0xFFD2D4D5),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: selected ? primaryColor : const Color(0xFF9EA1A3),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildNavItem(int index, IconData icon, String label) {
     final bool selected = _selectedIndex == index;
 
@@ -866,6 +883,271 @@ void _showQuickActions() {
           ),
         ),
       ),
+    );
+  }
+}
+
+// SLIDER PROMO (manual: swipe, tombol panah, dan indikator)
+class PromoCarousel extends StatefulWidget {
+  final List<PromoItem> promos;
+  final Function(PromoItem) onPromoTap;
+
+  const PromoCarousel({
+    super.key,
+    required this.promos,
+    required this.onPromoTap,
+  });
+
+  @override
+  State<PromoCarousel> createState() => _PromoCarouselState();
+}
+
+class _PromoCarouselState extends State<PromoCarousel> {
+  late PageController _pageController;
+  int _currentIndex = 0;
+  bool? _isLandscape;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+
+    // Saat landscape, kartu lebih ringkas dan kartu berikutnya tetap terlihat.
+    if (_isLandscape != isLandscape) {
+      _isLandscape = isLandscape;
+      _pageController.dispose();
+      _pageController = PageController(
+        initialPage: _currentIndex,
+        viewportFraction: isLandscape ? 0.58 : 1.0,
+      );
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PromoCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.promos.length != widget.promos.length) {
+      _currentIndex = 0;
+
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _goToPage(int index) {
+    if (!_pageController.hasClients) return;
+    if (index < 0 || index >= widget.promos.length) return;
+
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Widget _buildArrowButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 200),
+      opacity: enabled ? 1.0 : 0.35,
+      child: Material(
+        color: lightCyan,
+        shape: const CircleBorder(),
+        elevation: 0,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: enabled ? onTap : null,
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: Icon(
+              icon,
+              size: 20,
+              color: const Color(0xFF245F63),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.promos.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final isLandscape = _isLandscape ?? false;
+    final bool hasPrev = _currentIndex > 0;
+    final bool hasNext = _currentIndex < widget.promos.length - 1;
+
+    return Column(
+      children: [
+        Center(
+          child: ConstrainedBox(
+            // Batasi lebar slider pada layar landscape yang lebar.
+            constraints: BoxConstraints(
+              maxWidth: isLandscape ? 760 : double.infinity,
+            ),
+            child: SizedBox(
+              height: isLandscape ? 112 : 145,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.promos.length,
+                physics: const BouncingScrollPhysics(),
+                padEnds: true,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final promo = widget.promos[index];
+
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isLandscape ? 7 : 3,
+                      vertical: isLandscape ? 2 : 0,
+                    ),
+                    child: Material(
+                      color: lightCyan,
+                      borderRadius: BorderRadius.circular(14),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => widget.onPromoTap(promo),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(isLandscape ? 13 : 18),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFFC8F1F3),
+                                Color(0xFF8EDDE1),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      promo.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: isLandscape ? 15 : 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF245F63),
+                                      ),
+                                    ),
+                                    SizedBox(height: isLandscape ? 5 : 8),
+                                    Text(
+                                      promo.subtitle,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: isLandscape ? 10 : 12,
+                                        color: const Color(0xFF397E82),
+                                      ),
+                                    ),
+                                    SizedBox(height: isLandscape ? 5 : 8),
+                                    Text(
+                                      'Lihat Selengkapnya →',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: isLandscape ? 9 : 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF245F63),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: isLandscape ? 6 : 12),
+                              Icon(
+                                promo.icon,
+                                size: isLandscape ? 34 : 55,
+                                color: const Color(0xFF397E82),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: isLandscape ? 7 : 10),
+
+        // Kontrol di bawah kartu: panah kiri, indikator titik, panah kanan.
+        // Tidak lagi menumpuk di atas kartu, jadi tidak menutupi teks.
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildArrowButton(
+              icon: Icons.chevron_left_rounded,
+              enabled: hasPrev,
+              onTap: () => _goToPage(_currentIndex - 1),
+            ),
+            const SizedBox(width: 12),
+            ...List.generate(
+              widget.promos.length,
+              (index) {
+                final isActive = _currentIndex == index;
+
+                return GestureDetector(
+                  onTap: () => _goToPage(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: isActive ? 22 : 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: isActive ? primaryColor : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 12),
+            _buildArrowButton(
+              icon: Icons.chevron_right_rounded,
+              enabled: hasNext,
+              onTap: () => _goToPage(_currentIndex + 1),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -929,16 +1211,12 @@ class HomeNewsDetailPage extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: ResponsiveBody(
-        maxWidth: 960,
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        // HP portrait: gambar di atas. Landscape/tablet: gambar di kiri.
-        child: AdaptiveSplit(
-          gap: 20,
-          primaryFlex: 2,
-          secondaryFlex: 3,
-          primary: Container(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
               width: double.infinity,
               height: 180,
               decoration: BoxDecoration(
@@ -947,9 +1225,7 @@ class HomeNewsDetailPage extends StatelessWidget {
               ),
               child: Icon(news.icon, size: 80, color: const Color(0xFF397E82)),
             ),
-          secondary: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+            const SizedBox(height: 20),
             Text(
               news.date,
               style: const TextStyle(color: Colors.grey, fontSize: 12),
@@ -992,8 +1268,6 @@ class HomeNewsDetailPage extends StatelessWidget {
             ),
           ],
         ),
-        ),
-      ),
       ),
     );
   }
@@ -1004,6 +1278,10 @@ class AllServicesPage extends StatelessWidget {
 
   const AllServicesPage({super.key, required this.services});
 
+  static const double _spacing = 12;
+  static const double _minTile = 110;
+  static const double _maxTile = 150;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1013,62 +1291,118 @@ class AllServicesPage extends StatelessWidget {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: ResponsiveBody(
-        maxWidth: 960,
-        child: GridView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: services.length,
-        // jumlah kolom otomatis: 3 di HP portrait, lebih banyak di layar lebar
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 140,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.85,
-        ),
-        itemBuilder: (context, index) {
-          final service = services[index];
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final double available = constraints.maxWidth - 40; // padding 20
 
-          return Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                final valid = MarketplaceStore.instance.categories
-                    .contains(service.title);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ServiceListPage(
-                      initialCategory: valid ? service.title : 'Semua',
-                    ),
+            // Maksimal kolom = setengah jumlah item (dibulatkan ke atas),
+            // sehingga selalu ada minimal 2 baris. Jumlah kolom juga
+            // dibatasi agar tiap tombol tidak lebih kecil dari _minTile.
+            final int rowsMin2Cols = (services.length / 2).ceil();
+            final int fitCols =
+                ((available + _spacing) / (_minTile + _spacing)).floor();
+            final int columns = fitCols.clamp(1, rowsMin2Cols);
+
+            // Lebar grid dibatasi agar tombol tidak melebar di layar besar.
+            final double maxGridWidth =
+                columns * _maxTile + (columns - 1) * _spacing;
+            final double gridWidth =
+                available < maxGridWidth ? available : maxGridWidth;
+
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: SizedBox(
+                width: gridWidth,
+                child: GridView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  itemCount: services.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: _spacing,
+                    mainAxisSpacing: _spacing,
+                    childAspectRatio: 1,
                   ),
-                );
-              },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 25,
-                    backgroundColor: lightCyan,
-                    child: Icon(
-                      service.icon,
-                      color: const Color(0xFF397E82),
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    service.title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: textColor),
-                  ),
-                ],
+                  itemBuilder: (context, index) =>
+                      _buildServiceTile(context, services[index]),
+                ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServiceTile(BuildContext context, ServiceItem service) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () {
+          final valid =
+              MarketplaceStore.instance.categories.contains(service.title);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ServiceListPage(
+                initialCategory: valid ? service.title : 'Semua',
               ),
             ),
           );
         },
-      ),
+        // Ukuran ikon dan font mengikuti ukuran tile.
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final double side = box.biggest.shortestSide;
+            final double radius = side * 0.26;
+            final double iconSize = radius * 1.0;
+            final double fontSize = (side * 0.105).clamp(11.0, 16.0);
+
+            return Padding(
+              padding: EdgeInsets.all(side * 0.07),
+              child: Column(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Center(
+                      child: CircleAvatar(
+                        radius: radius,
+                        backgroundColor: lightCyan,
+                        child: Icon(
+                          service.icon,
+                          color: const Color(0xFF397E82),
+                          size: iconSize,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          service.title,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

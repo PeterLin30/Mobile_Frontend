@@ -109,12 +109,14 @@ class _ServiceListPageState extends State<ServiceListPage> {
     List<String> tokens,
   ) {
     if (tokens.isEmpty) return 0;
-    final strong = <String>[
+    final offerStrong = <String>[
       offer.title,
       offer.subCategory,
       offer.category,
-      provider.name,
       ...offer.tags,
+    ].map((e) => e.toLowerCase()).toList();
+    final providerStrong = <String>[
+      provider.name,
       ...provider.skills,
     ].map((e) => e.toLowerCase()).toList();
     final weak = <String>[
@@ -127,16 +129,22 @@ class _ServiceListPageState extends State<ServiceListPage> {
     ].map((e) => e.toLowerCase()).toList();
     final title = offer.title.toLowerCase();
 
+    // Tingkat kecocokan: judul/sub-kategori/tag layanan (4), nama atau
+    // keahlian penyedia (3), deskripsi, bio, lokasi, dan alat (1).
     var total = 0;
     for (final token in tokens) {
       final variants = <String>[token, ...(_synonyms[token] ?? const <String>[])];
       var best = 0;
       for (final v in variants) {
-        if (strong.any((f) => _wordStartMatch(f, v))) {
-          best = 3;
+        if (offerStrong.any((f) => _wordStartMatch(f, v))) {
+          best = 4;
           break;
         }
-        if (best < 1 && weak.any((f) => _wordStartMatch(f, v))) best = 1;
+        if (best < 3 && providerStrong.any((f) => _wordStartMatch(f, v))) {
+          best = 3;
+        } else if (best < 1 && weak.any((f) => _wordStartMatch(f, v))) {
+          best = 1;
+        }
       }
       if (best == 0) return -1;
       total += best + (_wordStartMatch(title, token) ? 2 : 0);

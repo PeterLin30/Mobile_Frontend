@@ -8,7 +8,6 @@ import 'news_page.dart';
 import 'promo_detail_page.dart';
 import 'marketplace_data.dart';
 import 'service_pages.dart';
-import 'chat_room_page.dart';
 import 'activity_page.dart';
 import 'ui_helpers.dart';
 import 'quick_action_sheet.dart';
@@ -538,7 +537,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // PENYEDIA LAYANAN: ketuk untuk langsung chat.
+  // PENYEDIA LAYANAN: ketuk untuk membuka profil lengkap penyedia.
   Widget _buildProviders() {
     final providers = MarketplaceStore.instance.providers;
 
@@ -555,7 +554,8 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(12),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ChatRoomPage(providerId: p.id)),
+              MaterialPageRoute(
+                builder: (_) => ProviderProfilePage(providerId: p.id)),
             ),
             child: SizedBox(
               width: 92,
